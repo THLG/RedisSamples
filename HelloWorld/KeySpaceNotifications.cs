@@ -9,7 +9,7 @@ namespace HelloWorld
 {
     /// <summary>
     /// More info about Key space notifications http://redis.io/topics/notifications
-    /// In this sample we have set KEA as the value.
+    /// In this sample we have set KEA as the value for notify-keyspace-events property.
     /// </summary>
     class KeySpaceNotifications
     {
@@ -17,25 +17,21 @@ namespace HelloWorld
         {
             IDatabase cache = Helper.Connection.GetDatabase();
             ISubscriber subscriber = Helper.Connection.GetSubscriber();
-            // Demo Setup
-            DemoSetup(cache);
-
-            //Single SET/GET
-            // Add a key/ value to Redis using a different client
-
-            while (true)
+            
+            // Register notification callback
+            subscriber.Subscribe("__keyspace@0__:*", (channel, value) =>
             {
-                subscriber.Subscribe("__keyspace@0__:*", (channel, value) =>
-                {
-                    Console.WriteLine("Notification raised=" + value);
-                }
-                );
+                Console.WriteLine("Notification raised=" + value);
+            });
+            
+            for (var i = 1; i < 20; i++)
+            {
+                var key = string.Concat("Key ", i);
+                var value = string.Concat("value ", i);
+                database.StringSet(key, value, TimeSpan.FromSeconds(10+i));
             }
-        }
-
-        private static void DemoSetup(IDatabase cache)
-        {
-            cache.KeyDelete("i");
+            
+            Console.ReadKey();
         }
     }
 }
